@@ -3,6 +3,8 @@ public class ProjectController {
     public String managerName { get; set; }
  
     public ProjectController() {
+        dfghjdfghjfgh
+        hnjmk
         User currentUser = [SELECT Name FROM User WHERE Id = :UserInfo.getUserId()];
         managerName = currentUser.Name;
  
