@@ -3,6 +3,7 @@ public class ProjectController {
     public String managerName { get; set; }
  
     public ProjectController() {
+        // Initialize the list of projects and manager name
         User currentUser = [SELECT Name FROM User WHERE Id = :UserInfo.getUserId()];
         managerName = currentUser.Name;
  
