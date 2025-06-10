@@ -1,0 +1,166 @@
+<template>
+    <template if:true={isModalOpen}>
+        <!-- Modal Backdrop -->
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open custom-modal">
+            <div class="slds-modal__container custom-modal-container">
+                <!-- Modal Header -->
+                <header class="slds-modal__header custom-modal-header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" 
+                            title="Close" onclick={closeModal}>
+                        <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 class="slds-modal__title slds-hyphenate custom-modal-title">
+                        {projectName} - Details
+                    </h2>
+                </header>
+                
+                <!-- Modal Body -->
+                <div class="slds-modal__content custom-modal-content">
+                    <template if:true={isLoading}>
+                        <div class="slds-align_absolute-center slds-p-around_large">
+                            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+                        </div>
+                    </template>
+                    
+                    <template if:false={isLoading}>
+                        <!-- Tabs -->
+                        <div class="custom-tabs">
+                            <ul class="slds-tabs_default__nav custom-tabs-nav" role="tablist">
+                                <li class={tasksTabClass} title="Tasks" role="presentation">
+                                    <a class="slds-tabs_default__link custom-tab-link" 
+                                       href="javascript:void(0);" 
+                                       role="tab" 
+                                       data-tab="tasks"
+                                       onclick={handleTabClick}>
+                                        Tasks ({tasks.length})
+                                    </a>
+                                </li>
+                                <li class={bugsTabClass} title="Bugs" role="presentation">
+                                    <a class="slds-tabs_default__link custom-tab-link" 
+                                       href="javascript:void(0);" 
+                                       role="tab" 
+                                       data-tab="bugs"
+                                       onclick={handleTabClick}>
+                                        Bugs ({bugs.length})
+                                    </a>
+                                </li>
+                            </ul>
+                            
+                            <!-- Tasks Tab Content -->
+                            <div class={tasksContentClass} role="tabpanel">
+                                <template if:true={formattedTasks}>
+                                    <template if:true={formattedTasks.length}>
+                                        <div class="custom-scrollable">
+                                            <template for:each={formattedTasks} for:item="task">
+                                                <div style="padding:1rem;" key={task.Id} class="custom-box">
+                                                    <div class="custom-content-grid">
+                                                        <div class="custom-full-width">
+                                                            <h3 class="custom-heading">{task.Name}</h3>
+                                                        </div>
+                                                        
+                                                        <div class="custom-half-width">
+                                                            <div style="display:flex;">
+                                                            <div class="custom-label">Subject:</div>
+                                                            <lightning-formatted-text value={task.Subject__c} class="custom-text"></lightning-formatted-text>
+                                                            </div>
+                                                        </div>
+                                                        <div class="custom-half-width">
+                                                            <div class="custom-details-grid">
+                                                                <div style="display:flex;">
+                                                                    <div class="custom-label">Status:</div>
+                                                                    <div>
+                                                                        <lightning-badge label={task.Status__c} class="custom-badge"></lightning-badge>
+                                                                    </div>
+                                                                </div>
+                                                                <div style="display:flex;">
+                                                                    <div class="custom-label">Priority:</div>
+                                                                    <div class="custom-text">{task.Priority__c}</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="custom-full-width custom-dates">
+                                                            <div class="custom-date-grid">
+                                                                <div><strong>Due:</strong> {task.formattedDueDate}</div>
+                                                                <div><strong>Created:</strong> {task.formattedCreatedDate}</div>
+                                                                <div><strong>Modified:</strong> {task.formattedModifiedDate}</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template if:false={formattedTasks.length}>
+                                        <div class="custom-empty-state">
+                                            <lightning-icon icon-name="utility:info" size="small" class="custom-icon"></lightning-icon>
+                                            No tasks found for this project.
+                                        </div>
+                                    </template>
+                                </template>
+                            </div>
+                            
+                            <!-- Bugs Tab Content -->
+                            <div class={bugsContentClass} role="tabpanel">
+                                <template if:true={formattedBugs}>
+                                    <template if:true={formattedBugs.length}>
+                                        <div style="padding:1rem;" class="custom-scrollable">
+                                            <template for:each={formattedBugs} for:item="bug">
+                                                <div key={bug.Id} class="custom-box">
+                                                    <div class="custom-content-grid">
+                                                        <div class="custom-full-width">
+                                                            <h3 class="custom-heading">{bug.Name}</h3>
+                                                        </div>
+                                                        <div class="custom-half-width">
+                                                            <div style="display:flex;">
+                                                            <div class="custom-label">Title:</div>
+                                                            <lightning-formatted-text value={bug.Title__c} class="custom-text"></lightning-formatted-text>
+                                                            </div>
+                                                        </div>
+                                                        <div class="custom-half-width">
+                                                            <div class="custom-details-grid">
+                                                                <div style="display:flex;">
+                                                                    <div class="custom-label">Status:</div>
+                                                                    <div>
+                                                                        <lightning-badge label={bug.Status__c} class="custom-badge"></lightning-badge>
+                                                                    </div>
+                                                                </div>
+                                                                <div style="display:flex;">
+                                                                    <div class="custom-label">Severity:</div>
+                                                                    <div class="custom-text">{bug.Severity__c}</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="custom-full-width custom-dates">
+                                                            <div class="custom-date-grid">
+                                                                <div><strong>Reported By:</strong> {bug.Reported_By__c}</div>
+                                                                <div><strong>Created:</strong> {bug.formattedCreatedDate}</div>
+                                                                <div><strong>Modified:</strong> {bug.formattedModifiedDate}</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template if:false={formattedBugs.length}>
+                                        <div class="custom-empty-state">
+                                            <lightning-icon icon-name="utility:info" size="small" class="custom-icon"></lightning-icon>
+                                            No bugs found for this project.
+                                        </div>
+                                    </template>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                
+                <!-- Modal Footer -->
+                <footer class="slds-modal__footer custom-modal-footer">
+                    <button class="slds-button slds-button_neutral custom-close-button" onclick={closeModal}>Close</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

@@ -1,0 +1,302 @@
+<!-- projectDashboard.html -->
+<template>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Profile Section -->
+            <div class="profile-section">
+                <div class="profile-avatar">
+                    <span class="avatar-text">{userInfo.initials}</span>
+                </div>
+                <div class="profile-info">
+                    <h3 class="profile-name">{userInfo.name}</h3>
+                    <p class="profile-email">{userInfo.email}</p>
+                </div>
+            </div>
+
+            <!-- Stats Section -->
+            <div class="stats-section">
+                <div class="stat-card">
+                    <div class="stat-icon tasks-icon">
+                        <lightning-icon icon-name="utility:task" size="small"></lightning-icon>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-number">{pendingTaskCount}</span>
+                        <span class="stat-label">Pending Tasks</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon bugs-icon">
+                        <lightning-icon icon-name="utility:bug" size="small"></lightning-icon>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-number">{pendingBugCount}</span>
+                        <span class="stat-label">Open Bugs</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="sidebar-nav">
+                <div class={projectNavClass} data-section="projects" onclick={handleNavigation}>
+                    <lightning-icon icon-name="utility:product_workspace" size="small"></lightning-icon>
+                    <span>Projects</span>
+                </div>
+                <div class={taskNavClass} data-section="tasks" onclick={handleNavigation}>
+                    <lightning-icon icon-name="utility:checklist" size="small"></lightning-icon>
+                    <span>Tasks & Bugs</span>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="content-header">
+                <div class="header-left">
+                    <h1 class="page-title">
+                        <template if:true={isProjectsView}>My Projects</template>
+                        <template if:true={isTasksView}>Tasks & Bugs</template>
+                    </h1>
+                    <div class="header-controls">
+                        <lightning-button-icon 
+                            icon-name="utility:search" 
+                            variant="border" 
+                            alternative-text="Search">
+                        </lightning-button-icon>
+                        <lightning-button-icon 
+                            icon-name="utility:refresh" 
+                            variant="border" 
+                            alternative-text="Refresh"
+                            onclick={loadInitialData}>
+                        </lightning-button-icon>
+                    </div>
+                </div>
+
+                <!-- current Month -->
+                <div class="header-right">
+                    <span class="current-month">{currentMonth}</span>
+                </div>
+                
+            </div>
+
+            <!-- Loading Spinner -->
+            <template if:true={isLoading}>
+                <div class="loading-container">
+                    <lightning-spinner alternative-text="Loading..." size="medium"></lightning-spinner>
+                </div>
+            </template>
+
+            <!-- Projects View -->
+            <template if:true={isProjectsView}>
+                <template if:false={isLoading}>
+                    <div class="projects-grid">
+                        <template for:each={projects} for:item="project">
+                            <div key={project.Id} class="project-card">
+                                <div class="project-header">
+                                    <div class="project-icon">
+                                        <lightning-icon icon-name="utility:product_workspace" size="medium"></lightning-icon>
+                                    </div>
+                                    <div class="project-status">
+                                        <span class={project.statusClass}>{project.Status__c}</span>
+                                    </div>
+                                </div>
+                                <div class="project-content">
+                                    <h3 class="project-title">{project.Name}</h3>
+                                    <div class="project-stats">
+                                        <div class="stat-item">
+                                            <span class="stat-value">{project.Total_Open_Bugs__c}</span>
+                                            <span class="stat-text">Open Bugs</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-value">{project.Total_Pending_Task__c}</span>
+                                            <span class="stat-text">Pending Tasks</span>
+                                        </div>
+                                    </div>
+                                    <div class="project-progress">
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style={project.styleString}></div>
+                                        </div>
+                                        <span class="progress-text">{project.progressWidth}% Complete</span>
+                                    </div>
+                                </div>
+                                <div class="project-footer">
+                                    <span class="project-dates">
+                                        {project.Start_Date__c} - {project.End_Date__c}
+                                    </span>
+
+                                    <lightning-button-icon  
+                    icon-name="utility:chevronright"  
+                    variant="bare"  
+                    size="small"
+                    data-project-id={project.Id}
+                    onclick={handleProjectDetailsClick}
+                    title="View Project Details"> 
+                </lightning-button-icon>
+
+                                </div>
+                            </div>
+                        </template>
+                        <!-- Modal Component -->
+    <c-project-details-model
+        is-modal-open={isModalOpen}
+        project-id={selectedProjectId}
+        project-name={selectedProjectName}
+        onclosemodal={handleModalClose}>
+    </c-project-details-model>
+                    </div>
+                </template>
+            </template>
+
+            <!-- Tasks & Bugs View -->
+            <!-- Enhanced Tasks & Bugs View -->
+<template if:true={isTasksView}>
+    <template if:false={isLoading}>
+        <div class="tasks-container">
+            <template for:each={tasksAndBugs} for:item="item"> 
+                <div key={item.Id} class="task-card">
+                    <div class="task-header">
+                        <div class="task-type">
+                            <template if:true={item.isTask}>
+                                <lightning-icon icon-name="utility:task" size="small"></lightning-icon>
+                                <span class="type-label task-label">Task</span>
+                            </template>
+                            <template if:true={item.isBug}>
+                                <lightning-icon icon-name="utility:bug" size="small"></lightning-icon>
+                                <span class="type-label bug-label">Bug</span>
+                            </template>
+                        </div>
+                        <div class="task-priority">
+                            <template if:true={item.isTask}>
+                                <span class={item.priorityClass}>
+                                    {item.Priority__c}
+                                </span>
+                            </template>
+                            <template if:true={item.isBug}>
+                                <span class={item.severityClass}>
+                                    {item.Severity__c}
+                                </span>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    <div class="task-content">
+                        <div class="task-name-row">
+                            <template if:true={item.isTask}>
+                                <span class="task-name">#{item.Name}</span>
+                            </template>
+                            <template if:true={item.isBug}>
+                                <span class="task-name">#{item.Name}</span>
+                            </template>
+                        </div>
+                        
+                        <h3 class="task-title">
+                            <template if:true={item.isTask}>{item.Subject__c}</template>
+                            <template if:true={item.isBug}>{item.Title__c}</template>
+                        </h3>
+                        
+                        <div class="task-details">
+                            <template if:true={item.isTask}>
+                                <div class="detail-row">
+                                    <span class="detail-label">Type:</span>
+                                    <span class="detail-value">{item.Type__c}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Project:</span>
+                                    <span class="detail-value">{item.projectName}</span>
+                                </div>
+                                <template if:true={item.Due_Date__c}>
+                                    <div class="detail-row">
+                                        <span class="detail-label">Due Date:</span>
+                                        <span class="detail-value">{item.formattedDueDate}</span>
+                                    </div>
+                                </template>
+                            </template>
+                            
+                            <template if:true={item.isBug}>
+                                <div class="detail-row">
+                                    <span class="detail-label">Reported By:</span>
+                                    <span class="detail-value">{item.reportedByName}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Project:</span>
+                                    <span class="detail-value">{item.projectName}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Created:</span>
+                                    <span class="detail-value">{item.formattedCreatedDate}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Last Modified:</span>
+                                    <span class="detail-value">{item.formattedLastModifiedDate}</span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    <div class="task-footer">
+                        <div class="task-status-section">
+                            <lightning-badge label={item.Status__c} variant="inverse"></lightning-badge>
+                        </div>
+                        
+                        <div class="task-actions">
+                            <template if:true={item.isTask}>
+                                <template if:false={item.isCompleted}>
+                                    <lightning-button 
+                                        label="Mark as Completed"
+                                        variant="success"
+                                        size="small"
+                                        data-id={item.Id}
+                                        data-type="task"
+                                        onclick={handleMarkCompleted}
+                                        class="complete-btn">
+                                    </lightning-button>
+                                </template>
+                            </template>
+                            
+                            <template if:true={item.isBug}>
+                                <template if:false={item.isClosed}>
+                                    <lightning-button 
+                                        label="Mark as Closed"
+                                        variant="success"
+                                        size="small"
+                                        data-id={item.Id}
+                                        data-type="bug"
+                                        onclick={handleMarkCompleted}
+                                        class="complete-btn">
+                                    </lightning-button>
+                                </template>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </template>
+</template>
+
+            <!-- Empty State -->
+            <template if:false={isLoading}>
+                <template if:true={isProjectsView}>
+                    <template if:false={projects.length}>
+                        <div class="empty-state">
+                            <lightning-icon icon-name="utility:product_workspace" size="large"></lightning-icon>
+                            <h3>No Projects Found</h3>
+                            <p>You don't have any active projects assigned to you.</p>
+                        </div>
+                    </template>
+                </template>
+                <template if:true={isTasksView}>
+                    <template if:false={tasksAndBugs.length}>
+                        <div class="empty-state">
+                            <lightning-icon icon-name="utility:checklist" size="large"></lightning-icon>
+                            <h3>No Tasks or Bugs</h3>
+                            <p>You don't have any pending tasks or open bugs.</p>
+                        </div>
+                    </template>
+                </template>
+            </template>
+        </div>
+    </div>
+</template>
