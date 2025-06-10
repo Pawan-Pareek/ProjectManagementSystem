@@ -2,6 +2,12 @@ public class ProjectController {
     public List<Project__c> projects { get; set; }
     public String managerName { get; set; }
  
+    public static void getGithubInfo() {
+        // This method can be used to fetch GitHub information if needed
+        // For now, it is left empty as per the original code
+        //Hi this is Aryan Communicating with Pawan
+    }
+
     public ProjectController() {
         User currentUser = [SELECT Name FROM User WHERE Id = :UserInfo.getUserId()];
         managerName = currentUser.Name;
